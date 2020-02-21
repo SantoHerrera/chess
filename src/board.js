@@ -156,26 +156,6 @@ export default class Board extends Component {
 
         console.log('before click ', cellClicked.hasBeenClicked);
 
-        //this.setState({ board[ID[0]][ID[1]]: !this.state.board[ID[0]][ID[1]]['hasBeenClicked'] }
-
-        // this.setState(state => {state.board[ID[0]][ID[1]]: 'clicked'})
-        //let reference = board[ID[0]][ID[1]]
-
-        //this.setState( state => {state.board[ID[0]][ID[1]][0]['hasBenenClicked']: true});
-
-
-        /*this.setState(prevState => ({
-            board[ID[0]][ID[1]].hasBeenClicked: !prevState.board[ID[0]][ID[1]].hasBeenClicked
-          }))*/
-        /*
-        this.setState((state, board) => ({
-          board[ID[0]][ID[1]]: state.counter + props.increment
-        }));*/
-
-        /*
-                this.setState(prevState => ({
-                    check: !prevState.check
-                }));*/
         console.log('after click,', this.state.board[ID[0]][ID[1]]);
 
         if (this.state.board[ID[0]][ID[1]].isBomb) {
