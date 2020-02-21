@@ -19,17 +19,28 @@ export default class Board extends Component {
     }
 
     getBoardReady = () => {
-        this.setState({
-            board: this.createNestedArray(3, 9)
-        })
 
-        for (let i = 0; i < this.state.idsOfBombs.length; i++) {
-            //doesnt work, is not updating state, line 94
-            this.getNearbyIds(this.state.idsOfBombs[i]);
-        }
+            this.createNestedArray(3, 9);
+
+            //console.log(this.state.idsOfBombs);
+
+           // const idsOfBombs = this.state.idsOfBombs
+
+
+        
     };
 
-    randomTrueFalse = () => Math.random() <= 0.2;
+    countNearbyBombs(arr) {
+        const currentBombs = this.state.idsOfBombs
+        //console.log(currentBombs, this.state.idsOfBombs)
+        /*
+        for (let i = 0; i < this.state.idsOfBombs; i++) {
+            //doesnt work, is not updating state, line 94
+            this.incrementNearbyCellBomb(this.state.idsOfBombs[i]);
+        }*/
+    }
+
+    randomTrueFalse = () => Math.random() <= 0.3;
 
     createNestedArray = (x, y) => {
         //x is how many arrays
@@ -62,16 +73,81 @@ export default class Board extends Component {
                 };
             }
         }
+
+        for(let i = 0; i < idsOfBombsHere.length; i++) {
+            this.incrementNearbyCellBomb(nestedArray, idsOfBombsHere[i])
+        }
+        
+        //nestedArray[0][0] = 'fujckkkjflkasjdf this'
+        //console.log(nestedArray);
+
+
+        
         this.setState({
             //keeps track of amount bombs
-            bombsOnBoard: countBombs
-        })
-
-        this.setState({
-            //ids of bombs on board
+            board: nestedArray,
+            bombsOnBoard: countBombs,
             idsOfBombs: idsOfBombsHere
         })
-        return nestedArray;
+/*
+        return {
+            board: nestedArray,
+            bombsOnBoard: countBombs,
+            idsOfBombs: idsOfBombsHere
+        }*/
+    }
+
+    incrementNearbyCellBomb(board, stringId) {
+        //console.log('this is being ran');
+        let Id = this.stringToId(stringId);
+        //let test = [];
+
+        const x = Id[0];
+        const y = Id[1];
+
+        for (let i = x - 1; i <= x + 1; i++) {
+            for (let j = y - 1; j <= y + 1; j++) {
+                //if it dont exist, move on
+                if (!board[i] || !board[i][j]) { continue; }
+                //dont put the box you clicked on the array of ids that represent the surrounding ids
+                else if (i === x && j === y) { continue; }
+
+                board[i][j].nearbyBombs++
+
+
+
+                //if neighbor is bomb increment
+                //what toDo
+
+                //1. if its a bomb move on
+                //else if (this.state.board[i][j].isBomb) { continue; }
+
+                //2 else state.board[x][y].nearbyBombs ++
+                //else {
+                    /*
+                    let newBoard = this.state.board;
+                    newBoard[i][j].nearbyBombs++;
+                    this.setState({
+                        board: newBoard
+                    })
+                    */
+                //   console.log(Id, this.state.board[i][j]);
+                //}
+
+
+
+
+
+
+                /*
+                let newBoard = this.state.board;
+                newBoard[x][y]['nearbyBombs']++;
+                this.setState({
+                    board: newBoard
+                })*/
+            }
+        }
+       // return board;
     }
 
     getNearbyIds(stringId) {
@@ -90,9 +166,16 @@ export default class Board extends Component {
 
                 //test.push(`${i}-${j}`)
                 //if neighbor is bomb increment
+                /*
                 if (this.state.board[i][j].isBomb) {
                     this.setState(state => state.board[i][j]['nearbyBombs']++)
-                }
+                }*/
+
+                let newBoard = this.state.board;
+                newBoard[i][j].nearbyBombs++;
+                this.setState({
+                    board: newBoard
+                })
             }
         }
         //return test;
@@ -107,11 +190,8 @@ export default class Board extends Component {
             let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e) }}>
                 {`${this.state.board[x][y].whatToShow}`
                 }
-                { //
-                    (this.state.board[x][y].isBomb)
-                        ? this.state.screen
-                        : this.state.board[x][y].nearbyBombs
-                }
+                { this.state.board[x][y].nearbyBombs}
+                { `${this.state.board[x][y].isBomb}`}
             </td>);
             return (
                 <tr>
@@ -133,6 +213,7 @@ export default class Board extends Component {
         let ID = this.stringToId(e.target.id)
         let cellClicked = this.state.board[ID[0]][ID[1]];
         //todo get hasBennClicked to change from false to true onclick
+        console.log(cellClicked);
         if (cellClicked.hasBeenClicked) {
             return;
         } else {
@@ -154,10 +235,6 @@ export default class Board extends Component {
 
         //3.    else set state to the neighborBomb number
 
-        console.log('before click ', cellClicked.hasBeenClicked);
-
-        console.log('after click,', this.state.board[ID[0]][ID[1]]);
-
         if (this.state.board[ID[0]][ID[1]].isBomb) {
             this.setState(state => state.bombsDiscovered++)
         }
@@ -177,7 +254,7 @@ export default class Board extends Component {
             >
                 <div>Bombs on Board {this.state.bombsOnBoard}</div>
                 <div>Bombs Ive Discovered {this.state.bombsDiscovered}</div>
-                <button onClick={this.getBoardReady}></button>
+                <button onClick={() => {this.getBoardReady(); this.countNearbyBombs(this.state.idsOfBombs)}}></button>
 
                 <table><tbody>{this.tablerows(this.state.board)}</tbody></table>
             </div>
