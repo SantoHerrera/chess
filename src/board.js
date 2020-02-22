@@ -10,6 +10,7 @@ export default class Board extends Component {
         super(props);
         this.state = {
             faceBomb: '',
+            questionMark: '?',
             bombsOnBoard: 0,
             bombsDiscovered: 0,
             bombsDiscoveredVerified: 0,
@@ -19,18 +20,10 @@ export default class Board extends Component {
     }
 
     getBoardReady = () => {
-
         this.createNestedArray(3, 9);
-
-        //console.log(this.state.idsOfBombs);
-
-        // const idsOfBombs = this.state.idsOfBombs
-
-
-
     };
 
-    randomTrueFalse = () => Math.random() <= 0.3;
+    randomTrueFalse = () => Math.random() <= 0.2;
 
     createNestedArray = (x, y) => {
         //x is how many arrays
@@ -55,7 +48,7 @@ export default class Board extends Component {
                 if (trueFalse) { countBombs++; idsOfBombsHere.push(`${i}-${j}`); }
                 //information of individual cell
                 nestedArray[i][j] = {
-                    whatToShow: "?",
+                    whatToShow: "thisGetsChanged",
                     isBomb: trueFalse,
                     hasBeenClicked: false,
                     nearbyBombs: 0,
@@ -101,10 +94,8 @@ export default class Board extends Component {
         if (!this.state.board) { return; }//if a board already exist return
         return nestedArray.map((rows, x) => {
             let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e) }}>
-                {`${this.state.board[x][y].whatToShow}`
-                }
-                {this.state.board[x][y].nearbyBombs}
-                {`${this.state.board[x][y].isBomb}`}
+                {/*if is hasnt been clicked display a question mark, else deplending on the situation display some kind of logic */}
+                {!(this.state.board[x][y].hasBeenClicked) ? this.state.questionMark : this.state.board[x][y].whatToShow}
             </td>);
             return (
                 <tr>
@@ -126,32 +117,26 @@ export default class Board extends Component {
         let ID = this.stringToId(e.target.id)
         let cellClicked = this.state.board[ID[0]][ID[1]];
         //todo get hasBennClicked to change from false to true onclick
-        console.log(cellClicked);
         if (cellClicked.hasBeenClicked) {
             return;
         } else {
             let newBoard = this.state.board;
             newBoard[ID[0]][ID[1]].hasBeenClicked = true;
+            //if its a bombs display *
+            if (newBoard[ID[0]][ID[1]].isBomb) { newBoard[ID[0]][ID[1]].whatToShow = "*" }
+            //if its not a bomb and no nearby bombs dont display anything
+            else if (!newBoard[ID[0]][ID[1]].isBomb && newBoard[ID[0]][ID[1]].nearbyBombs === 0) { newBoard[ID[0]][ID[1]].whatToShow = "" }
+            //else display nearby bomb number
+            else { newBoard[ID[0]][ID[1]].whatToShow = `${newBoard[ID[0]][ID[1]].nearbyBombs}` }
+            //newBoard[ID[0]][ID[1]].whatToShow = `${newBoard[ID[0]][ID[1]].nearbyBombs}`
             this.setState({
                 board: newBoard
             })
         }
-        //what toDO 
-        //1.    if is a bomb, setstate screen of cell to bomb
-        /*
-        if(this.state.board[ID[0]][ID[1]].isBomb) {
-            this.setState(state => state.board[ID[0]][ID[1]].whatToShow: '*')
-        }
-        */
-        //2.    if its not a bomb and the nighbor bombs === 0 
-        //setState of faceCelll to blank
-
-        //3.    else set state to the neighborBomb number
 
         if (this.state.board[ID[0]][ID[1]].isBomb) {
             this.setState(state => state.bombsDiscovered++)
         }
-
         if (this.state.bombsOnBoard === this.state.bombsDiscovered) {
             alert('youve kinda won')
         }
@@ -166,36 +151,10 @@ export default class Board extends Component {
             >
                 <div>Bombs on Board {this.state.bombsOnBoard}</div>
                 <div>Bombs Ive Discovered {this.state.bombsDiscovered}</div>
-                <button onClick={() => { this.getBoardReady(); this.countNearbyBombs(this.state.idsOfBombs) }}></button>
+                <button onClick={() => { this.getBoardReady(); }}></button>
 
                 <table><tbody>{this.tablerows(this.state.board)}</tbody></table>
             </div>
         )
     }
 }
-
-
-
-/* might need for later
-getNearbyIds(stringId) {
-    let Id = this.stringToId(stringId);
-    let test = [];
-
-    const x = Id[0];
-    const y = Id[1];
-
-    for (let i = x - 1; i <= x + 1; i++) {
-        for (let j = y - 1; j <= y + 1; j++) {
-            //if it dont exist, move on
-            if (!this.state.board[i] || !this.state.board[i][j]) { continue; }
-            //dont put the box you clicked on the array of ids that represent the surrounding ids
-            if (i === x && j === y) { continue; }
-
-            test.push(`${i}-${j}`)
-
-            this.state.board[][]
-        }
-    }
-    return test;
-}
-*/
