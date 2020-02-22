@@ -42,7 +42,7 @@ export default class Board extends Component {
         for (let i = 0; i < x; i++) {
             nestedArray.push([]);
             for (let j = 0; j < y; j++) {
-                //true represent bomb
+                //true represents bomb
                 let trueFalse = this.randomTrueFalse();
                 //keeps track of trues count && the ids 
                 if (trueFalse) { countBombs++; idsOfBombsHere.push(`${i}-${j}`); }
@@ -93,7 +93,7 @@ export default class Board extends Component {
     tablerows = (nestedArray) => {
         if (!this.state.board) { return; }//if a board already exist return
         return nestedArray.map((rows, x) => {
-            let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e) }}>
+            let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e); }} onContextMenu={(e) => this.cellClick(e)}>
                 {/*if is hasnt been clicked display a question mark, else deplending on the situation display some kind of logic */}
                 {!(this.state.board[x][y].hasBeenClicked) ? this.state.questionMark : this.state.board[x][y].whatToShow}
             </td>);
@@ -114,21 +114,30 @@ export default class Board extends Component {
     }
 
     cellClick = (e) => {
+        //disables right click
+        e.preventDefault()
+
         let ID = this.stringToId(e.target.id)
         let cellClicked = this.state.board[ID[0]][ID[1]];
+
         //todo get hasBennClicked to change from false to true onclick
         if (cellClicked.hasBeenClicked) {
             return;
         } else {
+            //disgusting!!!!, refactor
             let newBoard = this.state.board;
             newBoard[ID[0]][ID[1]].hasBeenClicked = true;
+            //if its rights clicked
+            if (e.type === 'contextmenu') {
+                newBoard[ID[0]][ID[1]].whatToShow = "M"
+            }
             //if its a bombs display *
-            if (newBoard[ID[0]][ID[1]].isBomb) { newBoard[ID[0]][ID[1]].whatToShow = "*" }
+            else if (newBoard[ID[0]][ID[1]].isBomb) { newBoard[ID[0]][ID[1]].whatToShow = "*" }
             //if its not a bomb and no nearby bombs dont display anything
             else if (!newBoard[ID[0]][ID[1]].isBomb && newBoard[ID[0]][ID[1]].nearbyBombs === 0) { newBoard[ID[0]][ID[1]].whatToShow = "" }
             //else display nearby bomb number
             else { newBoard[ID[0]][ID[1]].whatToShow = `${newBoard[ID[0]][ID[1]].nearbyBombs}` }
-            //newBoard[ID[0]][ID[1]].whatToShow = `${newBoard[ID[0]][ID[1]].nearbyBombs}`
+            
             this.setState({
                 board: newBoard
             })
@@ -144,11 +153,7 @@ export default class Board extends Component {
 
     render() {
         return (
-            <div
-            //toDo want to disable context menu, but I still need to to things with right click
-            //onContextMenu={
-            //(e)=> e.preventDefault()}
-            >
+            <div>
                 <div>Bombs on Board {this.state.bombsOnBoard}</div>
                 <div>Bombs Ive Discovered {this.state.bombsDiscovered}</div>
                 <button onClick={() => { this.getBoardReady(); }}></button>
