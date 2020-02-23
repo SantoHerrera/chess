@@ -1,7 +1,4 @@
 import React, { Component } from 'react';
-//import './src/components/board/row.js'
-//import VictoryModal from '../victoryModal/VictoryModal'
-//import CatModal from '../catModal/CatModal'
 import './index.css'
 import './App.css';
 
@@ -52,7 +49,8 @@ export default class Board extends Component {
                     isBomb: trueFalse,
                     hasBeenClicked: false,
                     nearbyBombs: 0,
-                    id: `${i}-${j}`
+                    id: `${i}-${j}`,
+                    wasrightClicked: false
                 };
             }
         }
@@ -62,7 +60,7 @@ export default class Board extends Component {
         }
 
         this.setState({
-            //keeps track of amount bombs
+            //keeps track of board and some bomb info
             board: nestedArray,
             bombsOnBoard: countBombs,
             idsOfBombs: idsOfBombsHere
@@ -86,6 +84,7 @@ export default class Board extends Component {
             }
         }
     }
+
     //for every item in array creates cell
     //[[],creates row from array
     //[{randomObj}], creates cell from randomObj
@@ -93,7 +92,7 @@ export default class Board extends Component {
     tablerows = (nestedArray) => {
         if (!this.state.board) { return; }//if a board already exist return
         return nestedArray.map((rows, x) => {
-            let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e); }} onContextMenu={(e) => this.cellClick(e)}>
+            let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e); }} onContextMenu={(e) => this.handleRightClickV2(e)}>
                 {/*if is hasnt been clicked display a question mark, else deplending on the situation display some kind of logic */}
                 {!(this.state.board[x][y].hasBeenClicked) ? this.state.questionMark : this.state.board[x][y].whatToShow}
             </td>);
@@ -103,6 +102,29 @@ export default class Board extends Component {
                 </tr>
             );
         });
+    }
+
+    handleRightClickV2(e) {
+        e.preventDefault();
+
+        let ID = this.stringToId(e.target.id);
+        
+        let newBoard = this.state.board;
+        //let cellClicked = this.state.board[ID[0]][ID[1]];
+
+
+        //if(!newBoard[ID[0]][ID[1]].wasrightClicked) {
+            newBoard[ID[0]][ID[1]].whatToShow = "M"
+        //} else {
+         //   newBoard[ID[0]][ID[1]].whatToShow = '';
+        //}
+
+       // cellClicked.wasrightClicked = !cellClicked.wasrightClicked;
+        console.log(newBoard[ID[0]][ID[1]]);
+        this.setState({
+            board: newBoard
+        })
+
     }
 
     stringToId(string) {
@@ -120,32 +142,33 @@ export default class Board extends Component {
         let ID = this.stringToId(e.target.id)
         let cellClicked = this.state.board[ID[0]][ID[1]];
 
-        //todo get hasBennClicked to change from false to true onclick
-        if (cellClicked.hasBeenClicked) {
-            return;
-        } else {
-            //disgusting!!!!, refactor
-            let newBoard = this.state.board;
-            newBoard[ID[0]][ID[1]].hasBeenClicked = true;
-            //if its rights clicked
-            if (e.type === 'contextmenu') {
-                newBoard[ID[0]][ID[1]].whatToShow = "M"
-            }
-            //if its a bombs display *
-            else if (newBoard[ID[0]][ID[1]].isBomb) { newBoard[ID[0]][ID[1]].whatToShow = "*" }
-            //if its not a bomb and no nearby bombs dont display anything
-            else if (!newBoard[ID[0]][ID[1]].isBomb && newBoard[ID[0]][ID[1]].nearbyBombs === 0) { newBoard[ID[0]][ID[1]].whatToShow = "" }
-            //else display nearby bomb number
-            else { newBoard[ID[0]][ID[1]].whatToShow = `${newBoard[ID[0]][ID[1]].nearbyBombs}` }
-            
-            this.setState({
-                board: newBoard
-            })
-        }
+        if (cellClicked.hasBeenClicked) { return; }
 
-        if (this.state.board[ID[0]][ID[1]].isBomb) {
+        let newBoard = this.state.board;
+
+        newBoard[ID[0]][ID[1]].hasBeenClicked = true;
+
+        //disgusting!!!!, refactor
+
+        //if its a bombs show *
+        if (newBoard[ID[0]][ID[1]].isBomb) { newBoard[ID[0]][ID[1]].whatToShow = "*" }
+        //if its not a bomb and no nearby bombs dont display anything
+        else if (!newBoard[ID[0]][ID[1]].isBomb && newBoard[ID[0]][ID[1]].nearbyBombs === 0) { newBoard[ID[0]][ID[1]].whatToShow = "" }
+        //else display nearby bomb number
+        else { newBoard[ID[0]][ID[1]].whatToShow = `${newBoard[ID[0]][ID[1]].nearbyBombs}` }
+
+        this.setState({
+            board: newBoard
+        });
+    }
+
+
+    checkWin() {
+
+        //make this into check win f
+       /* if (this.state.board[ID[0]][ID[1]].isBomb) {
             this.setState(state => state.bombsDiscovered++)
-        }
+        }*/
         if (this.state.bombsOnBoard === this.state.bombsDiscovered) {
             alert('youve kinda won')
         }
@@ -157,7 +180,6 @@ export default class Board extends Component {
                 <div>Bombs on Board {this.state.bombsOnBoard}</div>
                 <div>Bombs Ive Discovered {this.state.bombsDiscovered}</div>
                 <button onClick={() => { this.getBoardReady(); }}></button>
-
                 <table><tbody>{this.tablerows(this.state.board)}</tbody></table>
             </div>
         )
