@@ -45,7 +45,7 @@ export default class Board extends Component {
                 if (trueFalse) { countBombs++; idsOfBombsHere.push(`${i}-${j}`); }
                 //information of individual cell
                 nestedArray[i][j] = {
-                    whatToShow: "thisGetsChanged",
+                    whatToShow: "?",
                     isBomb: trueFalse,
                     hasBeenClicked: false,
                     nearbyBombs: 0,
@@ -92,9 +92,9 @@ export default class Board extends Component {
     tablerows = (nestedArray) => {
         if (!this.state.board) { return; }//if a board already exist return
         return nestedArray.map((rows, x) => {
-            let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e); }} onContextMenu={(e) => this.handleRightClickV2(e)}>
+            let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e); }} onContextMenu={(e) => this.handleRightClick(e)}>
                 {/*if is hasnt been clicked display a question mark, else deplending on the situation display some kind of logic */}
-                {!(this.state.board[x][y].hasBeenClicked) ? this.state.questionMark : this.state.board[x][y].whatToShow}
+                {this.state.board[x][y].whatToShow}
             </td>);
             return (
                 <tr>
@@ -102,29 +102,6 @@ export default class Board extends Component {
                 </tr>
             );
         });
-    }
-
-    handleRightClickV2(e) {
-        e.preventDefault();
-
-        let ID = this.stringToId(e.target.id);
-        
-        let newBoard = this.state.board;
-        //let cellClicked = this.state.board[ID[0]][ID[1]];
-
-
-        //if(!newBoard[ID[0]][ID[1]].wasrightClicked) {
-            newBoard[ID[0]][ID[1]].whatToShow = "M"
-        //} else {
-         //   newBoard[ID[0]][ID[1]].whatToShow = '';
-        //}
-
-       // cellClicked.wasrightClicked = !cellClicked.wasrightClicked;
-        console.log(newBoard[ID[0]][ID[1]]);
-        this.setState({
-            board: newBoard
-        })
-
     }
 
     stringToId(string) {
@@ -136,8 +113,6 @@ export default class Board extends Component {
     }
 
     cellClick = (e) => {
-        //disables right click
-        e.preventDefault()
 
         let ID = this.stringToId(e.target.id)
         let cellClicked = this.state.board[ID[0]][ID[1]];
@@ -162,14 +137,59 @@ export default class Board extends Component {
         });
     }
 
+    handleRightClick(e) {
+        //stops menu that pops up when right clicked to 
+        e.preventDefault();
+
+        let ID = this.stringToId(e.target.id);
+
+        let newBoard = this.state.board;
+        let cellClicked = newBoard[ID[0]][ID[1]];
+
+        if (cellClicked.hasBeenClicked) { return; }
+
+        cellClicked.wasrightClicked = !cellClicked.wasrightClicked;
+
+
+        if (cellClicked.wasrightClicked) {
+            cellClicked.whatToShow = "M"
+        } else {
+            cellClicked.whatToShow = '?';
+        }
+
+
+        if (cellClicked.wasrightClicked && cellClicked.isBomb) {
+            this.setState(prevState => {
+                return {
+                    bombsDiscoveredVerified: prevState.bombsDiscoveredVerified + 1,
+                    bombsDiscovered: prevState.bombsDiscovered + 1
+                }
+            });
+        }
+        else if (!cellClicked.wasrightClicked) {
+            this.setState(prevState => {
+                return {
+                    bombsDiscoveredVerified: prevState.bombsDiscoveredVerified - 1,
+                    bombsDiscovered: prevState.bombsDiscovered - 1
+                }
+            })
+
+        }
+
+        //console.log(newBoard);
+        this.setState({
+            board: newBoard
+        })
+        this.checkWin();
+    }
 
     checkWin() {
 
         //make this into check win f
-       /* if (this.state.board[ID[0]][ID[1]].isBomb) {
-            this.setState(state => state.bombsDiscovered++)
-        }*/
-        if (this.state.bombsOnBoard === this.state.bombsDiscovered) {
+        /* if (this.state.board[ID[0]][ID[1]].isBomb) {
+             this.setState(state => state.bombsDiscovered++)
+         }*/
+        if (this.state.bombsOnBoard === this.state.bombsDiscoveredVerified) {
             alert('youve kinda won')
         }
     }
@@ -179,6 +199,7 @@ export default class Board extends Component {
             <div>
                 <div>Bombs on Board {this.state.bombsOnBoard}</div>
                 <div>Bombs Ive Discovered {this.state.bombsDiscovered}</div>
+                <div>Verified Bombs marked {this.state.bombsDiscoveredVerified}</div>
                 <button onClick={() => { this.getBoardReady(); }}></button>
                 <table><tbody>{this.tablerows(this.state.board)}</tbody></table>
             </div>
