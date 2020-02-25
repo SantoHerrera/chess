@@ -150,30 +150,27 @@ export default class Board extends Component {
 
         cellClicked.wasrightClicked = !cellClicked.wasrightClicked;
 
-
+        //keeps track of bombs marked
         if (cellClicked.wasrightClicked) {
             cellClicked.whatToShow = "M"
+            this.setState(prevState => { return { bombsDiscovered: prevState.bombsDiscovered + 1 } });
+
+            if (cellClicked.isBomb) {
+                this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified + 1 } });
+            }
         } else {
             cellClicked.whatToShow = '?';
         }
 
-
-        if (cellClicked.wasrightClicked && cellClicked.isBomb) {
+        if (!cellClicked.wasrightClicked) {
             this.setState(prevState => {
                 return {
-                    bombsDiscoveredVerified: prevState.bombsDiscoveredVerified + 1,
-                    bombsDiscovered: prevState.bombsDiscovered + 1
-                }
-            });
-        }
-        else if (!cellClicked.wasrightClicked) {
-            this.setState(prevState => {
-                return {
-                    bombsDiscoveredVerified: prevState.bombsDiscoveredVerified - 1,
                     bombsDiscovered: prevState.bombsDiscovered - 1
                 }
             })
-
+            if (cellClicked.isBomb) {
+                this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified - 1 } })
+            }
         }
 
         //console.log(newBoard);
@@ -184,11 +181,6 @@ export default class Board extends Component {
     }
 
     checkWin() {
-
-        //make this into check win f
-        /* if (this.state.board[ID[0]][ID[1]].isBomb) {
-             this.setState(state => state.bombsDiscovered++)
-         }*/
         if (this.state.bombsOnBoard === this.state.bombsDiscoveredVerified) {
             alert('youve kinda won')
         }
