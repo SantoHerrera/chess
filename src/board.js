@@ -138,7 +138,7 @@ export default class Board extends Component {
     }
 
     handleRightClick(e) {
-        //stops menu that pops up when right clicked to 
+        //stops menu that pops up when right clicked it
         e.preventDefault();
 
         let ID = this.stringToId(e.target.id);
@@ -147,33 +147,31 @@ export default class Board extends Component {
         let cellClicked = newBoard[ID[0]][ID[1]];
 
         if (cellClicked.hasBeenClicked) { return; }
-
+        //so you can mark and unmark cell
         cellClicked.wasrightClicked = !cellClicked.wasrightClicked;
 
-        //keeps track of bombs marked
         if (cellClicked.wasrightClicked) {
-            cellClicked.whatToShow = "M"
+            cellClicked.whatToShow = "M";
+            //keeps track of bombs marked
             this.setState(prevState => { return { bombsDiscovered: prevState.bombsDiscovered + 1 } });
-
+            //if you marked a cell that really was a bomb, increment counter
             if (cellClicked.isBomb) {
                 this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified + 1 } });
             }
         } else {
             cellClicked.whatToShow = '?';
-        }
-
-        if (!cellClicked.wasrightClicked) {
+            //keeps track of bombs marked
             this.setState(prevState => {
                 return {
                     bombsDiscovered: prevState.bombsDiscovered - 1
                 }
             })
-            if (cellClicked.isBomb) {
-                this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified - 1 } })
+            if(cellClicked.isBomb) {
+                this.setState(prevState => {return {bombsDiscoveredVerified: prevState.bombsDiscoveredVerified - 1}})
             }
         }
 
-        //console.log(newBoard);
+        console.log('fuck')
         this.setState({
             board: newBoard
         })
