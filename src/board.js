@@ -7,6 +7,7 @@ export default class Board extends Component {
         super(props);
         this.state = {
             faceBomb: '',
+            firstClick: true,
             questionMark: '?',
             bombsOnBoard: 0,
             bombsDiscovered: 0,
@@ -118,6 +119,10 @@ export default class Board extends Component {
         let cellClicked = this.state.board[ID[0]][ID[1]];
 
         if (cellClicked.hasBeenClicked) { return; }
+        //if you die on first click, fix that
+        if(cellClicked.isBomb && this.state.firstClick) {
+            this.fixFirstClickBomb(ID);
+        }
 
         let newBoard = this.state.board;
 
@@ -136,6 +141,19 @@ export default class Board extends Component {
             board: newBoard
         });
     }
+
+    fixFirstClickBomb(removeID) {
+        console.log(this.state.idsOfBombs);
+        console.log(removeID);
+
+        //needs to remove id from idsOfBomb
+        //
+        //decrement all sourding ids count
+        //
+        //randomly create new id
+        //make sure it isnt already on idsOfBomb
+        //increment all sourdning ids bombs count
+    };
 
     handleRightClick(e) {
         //stops menu that pops up when right clicked it
