@@ -46,7 +46,7 @@ export default class Board extends Component {
                 if (trueFalse) { countBombs++; idsOfBombsHere.push(`${i}-${j}`); }
                 //information of individual cell
                 nestedArray[i][j] = {
-                    whatToShow: "?",
+                    screen: "?",
                     isBomb: trueFalse,
                     hasBeenClicked: false,
                     nearbyBombs: 0,
@@ -67,7 +67,7 @@ export default class Board extends Component {
             idsOfBombs: idsOfBombsHere
         })
     }
-
+    //need to abstracct these
     incrementNearbyCellBomb(board, stringId) {
         let Id = this.stringToId(stringId);
 
@@ -86,6 +86,24 @@ export default class Board extends Component {
         }
     }
 
+    decrementNearbyCellBomb(board, stringId) {
+        let Id = this.stringToId(stringId);
+
+        const x = Id[0];
+        const y = Id[1];
+
+        for (let i = x - 1; i <= x + 1; i++) {
+            for (let j = y - 1; j <= y + 1; j++) {
+                //if it dont exist, move on
+                if (!board[i] || !board[i][j]) { continue; }
+                //dont put the box you clicked on the array of ids that represent the surrounding ids
+                else if (i === x && j === y) { continue; }
+
+                board[i][j].nearbyBombs--;
+            }
+        }
+    }
+
     //for every item in array creates cell
     //[[],creates row from array
     //[{randomObj}], creates cell from randomObj
@@ -95,7 +113,8 @@ export default class Board extends Component {
         return nestedArray.map((rows, x) => {
             let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e); }} onContextMenu={(e) => this.handleRightClick(e)}>
                 {/*if is hasnt been clicked display a question mark, else deplending on the situation display some kind of logic */}
-                {this.state.board[x][y].whatToShow}
+                {this.state.board[x][y].screen}
+                {`${this.state.board[x][y].isBomb}`}
             </td>);
             return (
                 <tr>
@@ -120,38 +139,92 @@ export default class Board extends Component {
 
         if (cellClicked.hasBeenClicked) { return; }
         //if you die on first click, fix that
-        if(cellClicked.isBomb && this.state.firstClick) {
-            this.fixFirstClickBomb(ID);
+        if (cellClicked.isBomb && this.state.firstClick) {
+            //the reason for passing e.target.id instead of ID is beacuse its easier to check if array has 
+            //a string than a array
+            this.fixFirstClickBomb(e.target.id);
         }
 
         let newBoard = this.state.board;
 
         newBoard[ID[0]][ID[1]].hasBeenClicked = true;
 
-        //disgusting!!!!, refactor
 
-        //if its a bombs show *
-        if (newBoard[ID[0]][ID[1]].isBomb) { newBoard[ID[0]][ID[1]].whatToShow = "*" }
-        //if its not a bomb and no nearby bombs dont display anything
-        else if (!newBoard[ID[0]][ID[1]].isBomb && newBoard[ID[0]][ID[1]].nearbyBombs === 0) { newBoard[ID[0]][ID[1]].whatToShow = "" }
-        //else display nearby bomb number
-        else { newBoard[ID[0]][ID[1]].whatToShow = `${newBoard[ID[0]][ID[1]].nearbyBombs}` }
+        //disgusting!!!!, refactor
+       this.changeCellScreen(newBoard, e.target.id);
 
         this.setState({
-            board: newBoard
+            board: newBoard,
+            firstClick: false
         });
     }
 
-    fixFirstClickBomb(removeID) {
-        console.log(this.state.idsOfBombs);
-        console.log(removeID);
+    changeCellScreen(currentBoard, id) {
+        let ID = this.stringToId(id)
 
+        //if its a bomb show bomb
+        if (currentBoard[ID[0]][ID[1]].isBomb) { currentBoard[ID[0]][ID[1]].screen = "*" }
+        //if its not a bomb and no nearby bombs dont display anything
+        else if (!currentBoard[ID[0]][ID[1]].isBomb && currentBoard[ID[0]][ID[1]].nearbyBombs === 0) { currentBoard[ID[0]][ID[1]].screen = "" }
+        //else display nearby bomb number
+        else { currentBoard[ID[0]][ID[1]].screen = `${currentBoard[ID[0]][ID[1]].nearbyBombs}` }
+
+    }
+
+    showNearbyCellBombScreen(board, stringId) {
+        let Id = this.stringToId(stringId);
+
+        const x = Id[0];
+        const y = Id[1];
+
+        for (let i = x - 1; i <= x + 1; i++) {
+            for (let j = y - 1; j <= y + 1; j++) {
+                //if it dont exist, move on
+                if (!board[i] || !board[i][j]) { continue; }
+                //dont put the box you clicked on the array of ids that represent the surrounding ids
+                //else if (i === x && j === y) { continue; }
+
+                this.changeCellScreen(board, `${i}-${j}`)
+            }
+        }
+    }
+
+
+    removeItem(arr, removeThis) {
+        return arr.filter(item => item !== removeThis)
+    }
+
+    fixFirstClickBomb(cellID) {
+        console.log(cellID);
+
+        let newBoard = this.state.board;
+
+        //this.decrementNearbyCellBomb(newBoard, cellID)
+
+        //make all nearby cells false
+
+        let theNewNewBoard = this.showNearbyCellBombScreen(newBoard, cellID);
+
+
+        this.setState({
+            board: theNewNewBoard
+        })
         //needs to remove id from idsOfBomb
         //
+
+        //decrement all sourding ids count
+        //let newArr = this.removeItem(this.state.idsOfBombs, cellID)
+
+        //randomly create new id
+        //add it to newArr
+
+        //make sure it isnt already on idsOfBomb
+
+        /*this.setState({
+            idsOfBombs: newArr
+        })*/
         //decrement all sourding ids count
         //
-        //randomly create new id
-        //make sure it isnt already on idsOfBomb
         //increment all sourdning ids bombs count
     };
 
@@ -169,7 +242,7 @@ export default class Board extends Component {
         cellClicked.wasrightClicked = !cellClicked.wasrightClicked;
 
         if (cellClicked.wasrightClicked) {
-            cellClicked.whatToShow = "M";
+            cellClicked.screen = "M";
             //keeps track of bombs marked
             this.setState(prevState => { return { bombsDiscovered: prevState.bombsDiscovered + 1 } });
             //if you marked a cell that really was a bomb, increment counter
@@ -177,15 +250,15 @@ export default class Board extends Component {
                 this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified + 1 } });
             }
         } else {
-            cellClicked.whatToShow = '?';
+            cellClicked.screen = '?';
             //keeps track of bombs marked
             this.setState(prevState => {
                 return {
                     bombsDiscovered: prevState.bombsDiscovered - 1
                 }
             })
-            if(cellClicked.isBomb) {
-                this.setState(prevState => {return {bombsDiscoveredVerified: prevState.bombsDiscoveredVerified - 1}})
+            if (cellClicked.isBomb) {
+                this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified - 1 } })
             }
         }
 
