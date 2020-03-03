@@ -109,7 +109,7 @@ export default class Board extends Component {
 
         if (cellClicked.hasBeenClicked) { return; }
         //if you die on first click, fix that
-        if (cellClicked.isBomb && this.state.firstClick) {
+        if (this.state.firstClick) {
             //the reason for passing e.target.id instead of ID is beacuse its easier to check if array has 
             //a string than a array
             this.fixFirstClickBomb(e.target.id);
@@ -133,7 +133,6 @@ export default class Board extends Component {
 
     changeCellScreen(currentBoard, id) {
         let ID = this.stringToId(id)
-
         //if its a bomb show bomb
         if (currentBoard[ID[0]][ID[1]].isBomb) { currentBoard[ID[0]][ID[1]].screen = "*" }
         //if its not a bomb and no nearby bombs dont display anything
@@ -175,12 +174,22 @@ export default class Board extends Component {
         this.allNearbyCells(newBoard, cellID, (cell) => { cell.nearbyBombs-- })
     }
 
+    //makes all cells including the middle cell unckickable
+    make3by3Unclickable(newBoard, cellID) {
+
+        this.getCell(newBoard, cellID, (cell) => { cell.hasBeenClicked = true })
+
+        this.allNearbyCells(newBoard, cellID, (cell) => { cell.hasBeenClicked = true })
+    }
+
     fixFirstClickBomb(cellID) {
         let newBoard = this.state.board;
 
         let newidsOfBombs = this.state.idsOfBombs;
-        //
+        
         let removeTheseBombs = [];
+
+        this.make3by3Unclickable(newBoard, cellID)
 
         this.allNearbyCells(newBoard, cellID, (cell) => {
             if (cell.isBomb) {
@@ -189,16 +198,21 @@ export default class Board extends Component {
         })
 
         //remove the cell that was clicked
-        removeTheseBombs.push(cellID)
+        this.getCell(newBoard, cellID, (cell) => {
+            if (cell.isBomb) {
+                removeTheseBombs.push(cellID)
+            }
+        })
+
         //and any bombs nearby aswell
         removeTheseBombs.forEach((cell) => {
             this.removeBomb(newBoard, cell)
         })
-
+        //substract removeTheseBombs array from newIdsOfBombs
         newidsOfBombs = newidsOfBombs.filter((item) =>
             !removeTheseBombs.includes(item)
         )
-
+        //changes it from a ? to what needs to be shown
         this.allNearbyCells(newBoard, cellID, (cell) => {
             this.changeCellScreen(newBoard, cell.id)
         })
