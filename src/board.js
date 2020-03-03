@@ -18,10 +18,11 @@ export default class Board extends Component {
     }
 
     getBoardReady = () => {
-        this.createNestedArray(3, 9);
+        this.createNestedArray(5, 9);
+
     };
 
-    randomTrueFalse = () => Math.random() <= 0.9;
+    randomTrueFalse = () => Math.random() <= 0.2;
 
     createNestedArray = (x, y) => {
         //x is how many arrays
@@ -65,7 +66,10 @@ export default class Board extends Component {
             //keeps track of board and some bomb info
             board: nestedArray,
             bombsOnBoard: countBombs,
-            idsOfBombs: idsOfBombsHere
+            idsOfBombs: idsOfBombsHere,
+            firstClick: true,
+            bombsDiscovered: 0,
+            bombsDiscoveredVerified: 0
         })
     }
 
@@ -79,8 +83,6 @@ export default class Board extends Component {
             let row = rows.map((cell, y) => <td id={`${x}-${y}`} onClick={(e) => { this.cellClick(e); }} onContextMenu={(e) => this.handleRightClick(e)}>
                 {/*if is hasnt been clicked display a question mark, else deplending on the situation display some kind of logic */}
                 {this.state.board[x][y].screen}
-                {`${this.state.board[x][y].isBomb}`}
-                {this.state.board[x][y].nearbyBombs}
             </td>);
             return (
                 <tr>
@@ -113,20 +115,20 @@ export default class Board extends Component {
             this.fixFirstClickBomb(e.target.id);
         }
 
+        if (cellClicked.isBomb) {
+            alert('youve lost please reload page to play again');
+        }
+
         let newBoard = this.state.board;
 
         newBoard[ID[0]][ID[1]].hasBeenClicked = true;
 
-
-        //disgusting!!!!, refactor
         this.changeCellScreen(newBoard, e.target.id);
 
         this.setState({
             board: newBoard,
             firstClick: false
         });
-
-        //console.log(this.state.idsOfBombs)
     }
 
     changeCellScreen(currentBoard, id) {
@@ -137,9 +139,9 @@ export default class Board extends Component {
         //if its not a bomb and no nearby bombs dont display anything
         else if (!currentBoard[ID[0]][ID[1]].isBomb && currentBoard[ID[0]][ID[1]].nearbyBombs === 0) { currentBoard[ID[0]][ID[1]].screen = "" }
         //else display nearby bomb number
-        else { currentBoard[ID[0]][ID[1]].screen = `${currentBoard[ID[0]][ID[1]].nearbyBombs}` }
-
+        else { currentBoard[ID[0]][ID[1]].screen = currentBoard[ID[0]][ID[1]].nearbyBombs }
     }
+
     //gets all nearby cells
     allNearbyCells(board, stringId, fn) {
         let Id = this.stringToId(stringId);
@@ -166,11 +168,6 @@ export default class Board extends Component {
         fn(board[Id[0]][Id[1]]);
     }
 
-    removeItem(arr, removeThis) {
-        let newArr = arr.filter(item => item !== removeThis);
-        return newArr;
-    }
-
     removeBomb(newBoard, cellID) {
         //makes the cell bomb false
         this.getCell(newBoard, cellID, (cell) => { cell.isBomb = false });
@@ -179,14 +176,10 @@ export default class Board extends Component {
     }
 
     fixFirstClickBomb(cellID) {
-        //what toDo
-        //now i need to remove all of the ids from removeTHeseBombs from this.state.idsOfBombs
-        //so everything is kept track of
-
         let newBoard = this.state.board;
 
         let newidsOfBombs = this.state.idsOfBombs;
-
+        //
         let removeTheseBombs = [];
 
         this.allNearbyCells(newBoard, cellID, (cell) => {
@@ -194,6 +187,7 @@ export default class Board extends Component {
                 removeTheseBombs.push(cell.id)
             }
         })
+
         //remove the cell that was clicked
         removeTheseBombs.push(cellID)
         //and any bombs nearby aswell
@@ -201,8 +195,18 @@ export default class Board extends Component {
             this.removeBomb(newBoard, cell)
         })
 
+        newidsOfBombs = newidsOfBombs.filter((item) =>
+            !removeTheseBombs.includes(item)
+        )
+
+        this.allNearbyCells(newBoard, cellID, (cell) => {
+            this.changeCellScreen(newBoard, cell.id)
+        })
+
         this.setState({
-            board: newBoard
+            board: newBoard,
+            idsOfBombs: newidsOfBombs,
+            bombsOnBoard: newidsOfBombs.length
         })
     };
     //all this functions really does is mark and unmarks a cell from ? to m
@@ -258,7 +262,7 @@ export default class Board extends Component {
                 <div>Bombs on Board {this.state.bombsOnBoard}</div>
                 <div>Bombs Ive Discovered {this.state.bombsDiscovered}</div>
                 <div>Verified Bombs marked {this.state.bombsDiscoveredVerified}</div>
-                <button onClick={() => { this.getBoardReady(); }}></button>
+                <button onClick={() => { this.getBoardReady(); }}>Start New Game</button>
                 <table><tbody>{this.tablerows(this.state.board)}</tbody></table>
             </div>
         )
