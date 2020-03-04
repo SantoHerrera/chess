@@ -92,59 +92,10 @@ export default class Board extends Component {
         });
     }
 
-    stringToId(string) {
-        //given 'x-y' will return ['x', 'y']
-        let theId = string.split('-');
-        //x && y will be turned into numbers, returns array
-        let ID = theId.map(stringNumber => parseInt(stringNumber));
-        return ID;
-    }
+    //////////////////////////////////////////////////////////////////////////
+    //      Some helper functions
+    /////////////////////////////////////////////////////////////////////////
 
-    cellClick = (e) => {
-
-        let ID = this.stringToId(e.target.id)
-        let cellClicked = this.state.board[ID[0]][ID[1]];
-
-        if (cellClicked.hasBeenClicked) { return; }
-        //if you die on first click, fix that
-        if (this.state.firstClick) {
-            //the reason for passing e.target.id instead of ID is beacuse its easier to check if array has 
-            //a string than a array
-            this.fixFirstClickBomb(e.target.id);
-        }
-
-        if (cellClicked.isBomb) {
-            alert('youve lost please reload page to play again');
-        }
-
-        let newBoard = this.state.board;
-
-        newBoard[ID[0]][ID[1]].hasBeenClicked = true;
-
-        this.changeCellScreen(newBoard, e.target.id);
-
-        this.setState({
-            board: newBoard,
-            firstClick: false
-        });
-    }
-
-    changeCellScreen(currentBoard, id) {
-
-        let currentCell = this.getCell(currentBoard, id)
-        //if its a bomb show bomb
-        if (currentCell.isBomb) {
-            this.getCell(currentBoard, id, (cell) => { cell.screen = '*' })
-        }
-        //if its not a bomb and no nearby bombs dont display anything
-        else if (!currentCell.isBomb && currentCell.nearbyBombs === 0) { this.getCell(currentBoard, id, (cell) => { cell.screen = "" }) }
-        //else display nearby bomb number
-        else {
-            this.getCell(currentBoard, id, (cell) => { cell.screen = cell.nearbyBombs })
-        }
-    }
-
-    //gets all nearby cells
     allNearbyCells(board, stringId, fn) {
         let Id = this.stringToId(stringId);
 
@@ -163,6 +114,21 @@ export default class Board extends Component {
         }
     }
 
+    changeCellScreen(currentBoard, id) {
+
+        let currentCell = this.getCell(currentBoard, id)
+        //if its a bomb show bomb
+        if (currentCell.isBomb) {
+            this.getCell(currentBoard, id, (cell) => { cell.screen = '*' })
+        }
+        //if its not a bomb and no nearby bombs dont display anything
+        else if (!currentCell.isBomb && currentCell.nearbyBombs === 0) { this.getCell(currentBoard, id, (cell) => { cell.screen = "" }) }
+        //else display nearby bomb number
+        else {
+            this.getCell(currentBoard, id, (cell) => { cell.screen = cell.nearbyBombs })
+        }
+    }
+
     getCell(board, cellID, fn) {
         //modify one cell
         let Id = this.stringToId(cellID)
@@ -172,6 +138,90 @@ export default class Board extends Component {
         }
         return board[Id[0]][Id[1]];
     }
+
+    stringToId(string) {
+        //given 'x-y' will return ['x', 'y']
+        let theId = string.split('-');
+        //x && y will be turned into numbers, returns array
+        let ID = theId.map(stringNumber => parseInt(stringNumber));
+        return ID;
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    ////////   what happens when you click a cell
+    /////////////////////////////////////////////////////////////////////
+
+    cellClick = (e) => {
+
+        let newBoard = this.state.board;
+
+        let cellClicked = this.getCell(newBoard, e.target.id)
+
+        if (cellClicked.hasBeenClicked) { return; }
+        //fixes the chance of you dying on first click
+        if (this.state.firstClick) {
+            //the reason for passing e.target.id instead of ID is beacuse its easier to check if array has 
+            //a string than a array
+            this.fixFirstClickBomb(e.target.id);
+        }
+
+        if (cellClicked.isBomb) {
+            alert('youve lost please reload page to play again');
+        }
+        //makes cell unclickable
+        this.getCell(newBoard, e.target.id, (cell) => { cell.hasBeenClicked = true; })
+
+        this.changeCellScreen(newBoard, e.target.id);
+
+        this.setState({
+            board: newBoard,
+            firstClick: false
+        });
+    }
+
+    //all this functions really does is mark and unmarks a cell from ? to m, and keeps count if you marked a bombs successfully
+    handleRightClick(e) {
+        //stops menu that pops up when right clicked 
+        e.preventDefault();
+
+        let newBoard = this.state.board;
+        let cellClicked = this.getCell(newBoard, e.target.id)
+
+        if (cellClicked.hasBeenClicked) { return; }
+        //so you can mark and unmark cell
+        cellClicked.wasrightClicked = !cellClicked.wasrightClicked;
+
+        if (cellClicked.wasrightClicked) {
+            cellClicked.screen = "M";
+            //keeps track of bombs marked
+            this.setState(prevState => { return { bombsDiscovered: prevState.bombsDiscovered + 1 } });
+            //if you marked a cell that really was a bomb, increment counter
+            if (cellClicked.isBomb) {
+                this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified + 1 } });
+            }
+        } else {
+            cellClicked.screen = '?';
+            //keeps track of bombs marked
+            this.setState(prevState => {
+                return {
+                    bombsDiscovered: prevState.bombsDiscovered - 1
+                }
+            })
+            if (cellClicked.isBomb) {
+                this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified - 1 } })
+            }
+        }
+
+        this.setState({
+            board: newBoard
+        }, () => {
+            this.checkWin();
+        })
+    }
+
+    ///////////////////////////////////////////////
+    //////  clears 3 by 3 from where you clicked and keeps count of bombs removed
+    ///////////////////////////////////////////////
 
     removeBomb(newBoard, cellID) {
         //makes the cell bomb false
@@ -215,7 +265,7 @@ export default class Board extends Component {
             this.removeBomb(newBoard, cell)
         })
         //substract removeTheseBombs array from newIdsOfBombs
-        //ex. arr1 = [1, 2, 3, 4], arr2 = [1, 3] //makes it so arr1 ends up being [2, 4]
+        //ex. arr1 = [1, 2, 3, 4], arr2 = [1, 3] //makes it so arr1 = [2, 4]
         newidsOfBombs = newidsOfBombs.filter((item) =>
             !removeTheseBombs.includes(item)
         )
@@ -230,46 +280,6 @@ export default class Board extends Component {
             bombsOnBoard: newidsOfBombs.length
         })
     };
-    //all this functions really does is mark and unmarks a cell from ? to m, and keeps count if you marked a bombs successfully
-    handleRightClick(e) {
-        //stops menu that pops up when right clicked 
-        e.preventDefault();
-
-        let newBoard = this.state.board;
-        let cellClicked = this.getCell(newBoard, e.target.id)
-
-        if (cellClicked.hasBeenClicked) { return; }
-        //so you can mark and unmark cell
-        cellClicked.wasrightClicked = !cellClicked.wasrightClicked;
-
-        if (cellClicked.wasrightClicked) {
-            cellClicked.screen = "M";
-            //keeps track of bombs marked
-            this.setState(prevState => { return { bombsDiscovered: prevState.bombsDiscovered + 1 } });
-            //if you marked a cell that really was a bomb, increment counter
-            if (cellClicked.isBomb) {
-                this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified + 1 } });
-            }
-        } else {
-            cellClicked.screen = '?';
-            //keeps track of bombs marked
-            this.setState(prevState => {
-                return {
-                    bombsDiscovered: prevState.bombsDiscovered - 1
-                }
-            })
-            if (cellClicked.isBomb) {
-                this.setState(prevState => { return { bombsDiscoveredVerified: prevState.bombsDiscoveredVerified - 1 } })
-            }
-        }
-
-        this.setState({
-            board: newBoard
-        }, ()=> {
-            this.checkWin();
-        })
-        
-    }
 
     checkWin() {
         if (this.state.bombsOnBoard === this.state.bombsDiscoveredVerified) {
@@ -282,7 +292,7 @@ export default class Board extends Component {
             <div>
                 <div>Bombs on Board {this.state.bombsOnBoard}</div>
                 <div>Bombs Ive Discovered {this.state.bombsDiscovered}</div>
-                <div>Verified Bombs marked{this.state.bombsDiscoveredVerified} /*this is a cheat sheet*/</div>
+                <div>Verified Bombs marked {this.state.bombsDiscoveredVerified} /*this is a cheat sheet*/</div>
                 <button onClick={() => { this.getBoardReady(); }}>Start New Game</button>
                 <table><tbody>{this.tablerows(this.state.board)}</tbody></table>
             </div>
