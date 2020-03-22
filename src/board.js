@@ -147,6 +147,14 @@ export default class Board extends Component {
         return ID;
     }
 
+    //makes all cells including the middle cell unckickable
+    make3by3Unclickable(newBoard, cellID) {
+        //makes THE cell unclickable
+        this.getCell(newBoard, cellID, (cell) => { cell.hasBeenClicked = true })
+        //makes all the surrounding cells unclickable
+        this.allNearbyCells(newBoard, cellID, (cell) => { cell.hasBeenClicked = true })
+    }
+
     ////////////////////////////////////////////////////////////////////
     ////////   what happens when you click a cell
     /////////////////////////////////////////////////////////////////////
@@ -163,6 +171,13 @@ export default class Board extends Component {
             //the reason for passing e.target.id instead of ID is beacuse its easier to check if array has 
             //a string than a array
             this.fixFirstClickBomb(e.target.id);
+
+            this.make3by3Unclickable(newBoard, e.target.id)
+
+            this.allNearbyCells(newBoard, e.target.id, (cell) => {
+                this.changeCellScreen(newBoard, cell.id)
+            })
+
         }
 
         if (cellClicked.isBomb) {
@@ -220,7 +235,7 @@ export default class Board extends Component {
     }
 
     ///////////////////////////////////////////////
-    //////  clears 3 by 3 from where you clicked and keeps count of bombs removed
+    //////  
     ///////////////////////////////////////////////
 
     removeBomb(newBoard, cellID) {
@@ -230,49 +245,34 @@ export default class Board extends Component {
         this.allNearbyCells(newBoard, cellID, (cell) => { cell.nearbyBombs-- })
     }
 
-    //makes all cells including the middle cell unckickable
-    make3by3Unclickable(newBoard, cellID) {
-        //makes THE cell unclickable
-        this.getCell(newBoard, cellID, (cell) => { cell.hasBeenClicked = true })
-        //makes all the surrounding cells unclickable
-        this.allNearbyCells(newBoard, cellID, (cell) => { cell.hasBeenClicked = true })
-    }
-
     fixFirstClickBomb(cellID) {
         let newBoard = this.state.board;
 
         let newidsOfBombs = this.state.idsOfBombs;
 
-        let removeTheseBombs = [];
-
-        this.make3by3Unclickable(newBoard, cellID)
-        //keeps track of all bombs that were nearby the cell that was clicked
-        this.allNearbyCells(newBoard, cellID, (cell) => {
-            if (cell.isBomb) {
-                removeTheseBombs.push(cell.id)
-            }
-        })
-
-        //remove the bomb that was clicked
+        let bombsRemoved = [];
+        //cell clicked
         this.getCell(newBoard, cellID, (cell) => {
             if (cell.isBomb) {
-                removeTheseBombs.push(cellID)
+                this.removeBomb(newBoard, cell.id);
+
+                bombsRemoved.push(cellID)
             }
         })
 
-        //and any bombs nearby aswell
-        removeTheseBombs.forEach((cell) => {
-            this.removeBomb(newBoard, cell)
+        this.allNearbyCells(newBoard, cellID, (cell) => {
+            if (cell.isBomb) {
+                this.removeBomb(newBoard, cell.id);
+
+                bombsRemoved.push(cell.id)
+            }
         })
-        //substract removeTheseBombs array from newIdsOfBombs
+
+        //substract bombsRemoved array from newIdsOfBombs
         //ex. arr1 = [1, 2, 3, 4], arr2 = [1, 3] //makes it so arr1 = [2, 4]
         newidsOfBombs = newidsOfBombs.filter((item) =>
-            !removeTheseBombs.includes(item)
+            !bombsRemoved.includes(item)
         )
-        //changes it from ? to what needs to be shown
-        this.allNearbyCells(newBoard, cellID, (cell) => {
-            this.changeCellScreen(newBoard, cell.id)
-        })
 
         this.setState({
             board: newBoard,
