@@ -159,13 +159,59 @@ export default class Board extends Component {
     ////////   what happens when you click a cell
     /////////////////////////////////////////////////////////////////////
 
+    /*
+    unlockNearbyCells(cellID) {
+        let cellLoc = this.stringToId(cellID)
+
+        let moveCell = [[0, 1], [1, 1], [1, 0]];
+
+        
+
+        for(let i = 0; i < moveCell.length; i++) {
+            let x = cellLoc[0] + moveCell[i][0]
+            let y = cellLoc[1] + moveCell[i][1]
+
+        }
+    }
+    */
+
+    doubleClickToUnlock(cellID) {
+        let newBoard = this.state.board;
+
+        let uncoverCells = [];
+
+        this.allNearbyCells(newBoard, cellID, (cell) => {
+            if (!cell.isBomb) {
+                uncoverCells.push(cell.id);
+            }
+        })
+
+        for (let i = 0; i < uncoverCells.length; i++) {
+            this.allNearbyCells(newBoard, cellID, (cell) => {
+                if (uncoverCells.includes(cell.id) || !cell.nearbyBombs === 0) {
+                    console.log('do nothing')
+                 } else {
+                     uncoverCells.push(cell.id)
+                 }
+
+            })
+        }
+
+        uncoverCells.forEach(cell => {this.changeCellScreen(newBoard, cell)})
+    }
+
+
+
     cellClick = (e) => {
 
         let newBoard = this.state.board;
 
         let cellClicked = this.getCell(newBoard, e.target.id)
 
-        if (cellClicked.hasBeenClicked) { return; }
+        if (cellClicked.hasBeenClicked) {
+            this.doubleClickToUnlock(e.target.id);
+            //return;
+        }
         //fixes the chance of you dying on first click
         if (this.state.firstClick) {
             //the reason for passing e.target.id instead of ID is beacuse its easier to check if array has 
@@ -235,7 +281,7 @@ export default class Board extends Component {
     }
 
     ///////////////////////////////////////////////
-    //////  
+    //////  main
     ///////////////////////////////////////////////
 
     removeBomb(newBoard, cellID) {
