@@ -18,11 +18,11 @@ export default class Board extends Component {
     }
 
     getBoardReady = () => {
-        this.createNestedArray(5, 9);
+        this.createNestedArray(8, 8);
 
     };
 
-    randomTrueFalse = () => Math.random() <= 0.2;
+    
 
     createNestedArray = (x, y) => {
         //x is how many arrays
@@ -42,13 +42,13 @@ export default class Board extends Component {
             nestedArray.push([]);
             for (let j = 0; j < y; j++) {
                 //true represents bomb
-                let trueFalse = this.randomTrueFalse();
+                
                 //keeps track of trues count && the ids 
-                if (trueFalse) { countBombs++; idsOfBombsHere.push(`${i}-${j}`); }
+                
                 //information of individual cell
                 nestedArray[i][j] = {
                     screen: "?",
-                    isBomb: trueFalse,
+                  
                     hasBeenClicked: false,
                     nearbyBombs: 0,
                     id: `${i}-${j}`,
@@ -147,88 +147,15 @@ export default class Board extends Component {
         return ID;
     }
 
-    //makes all cells including the middle cell unckickable
-    make3by3Unclickable(newBoard, cellID) {
-        //makes THE cell unclickable
-        this.getCell(newBoard, cellID, (cell) => { cell.hasBeenClicked = true })
-        //makes all the surrounding cells unclickable
-        this.allNearbyCells(newBoard, cellID, (cell) => { cell.hasBeenClicked = true })
-    }
 
-    ////////////////////////////////////////////////////////////////////
-    ////////   what happens when you click a cell
-    /////////////////////////////////////////////////////////////////////
-
-    /*
-    unlockNearbyCells(cellID) {
-        let cellLoc = this.stringToId(cellID)
-
-        let moveCell = [[0, 1], [1, 1], [1, 0]];
-
-        
-
-        for(let i = 0; i < moveCell.length; i++) {
-            let x = cellLoc[0] + moveCell[i][0]
-            let y = cellLoc[1] + moveCell[i][1]
-
-        }
-    }
-    */
-
-    doubleClickToUnlock(cellID) {
-        let newBoard = this.state.board;
-
-        let uncoverCells = [];
-
-        this.allNearbyCells(newBoard, cellID, (cell) => {
-            if (!cell.isBomb) {
-                uncoverCells.push(cell.id);
-            }
-        })
-
-        for (let i = 0; i < uncoverCells.length; i++) {
-            this.allNearbyCells(newBoard, cellID, (cell) => {
-                if (uncoverCells.includes(cell.id) || !cell.nearbyBombs === 0) {
-                    console.log('do nothing')
-                 } else {
-                     uncoverCells.push(cell.id)
-                 }
-
-            })
-        }
-
-        uncoverCells.forEach(cell => {this.changeCellScreen(newBoard, cell)})
-    }
-
+    
 
 
     cellClick = (e) => {
 
         let newBoard = this.state.board;
 
-        let cellClicked = this.getCell(newBoard, e.target.id)
-
-        if (cellClicked.hasBeenClicked) {
-            this.doubleClickToUnlock(e.target.id);
-            //return;
-        }
-        //fixes the chance of you dying on first click
-        if (this.state.firstClick) {
-            //the reason for passing e.target.id instead of ID is beacuse its easier to check if array has 
-            //a string than a array
-            this.fixFirstClickBomb(e.target.id);
-
-            this.make3by3Unclickable(newBoard, e.target.id)
-
-            this.allNearbyCells(newBoard, e.target.id, (cell) => {
-                this.changeCellScreen(newBoard, cell.id)
-            })
-
-        }
-
-        if (cellClicked.isBomb) {
-            alert('youve lost please reload page to play again');
-        }
+     
         //makes cell unclickable
         this.getCell(newBoard, e.target.id, (cell) => { cell.hasBeenClicked = true; })
 
@@ -244,6 +171,8 @@ export default class Board extends Component {
     handleRightClick(e) {
         //stops menu that pops up when right clicked 
         e.preventDefault();
+
+        console.log("right click")
 
         let newBoard = this.state.board;
         let cellClicked = this.getCell(newBoard, e.target.id)
@@ -336,9 +265,7 @@ export default class Board extends Component {
     render() {
         return (
             <div>
-                <div>Bombs on Board {this.state.bombsOnBoard}</div>
-                <div>Bombs Ive Discovered {this.state.bombsDiscovered}</div>
-                <div>Verified Bombs marked {this.state.bombsDiscoveredVerified} /*this is a cheat sheet*/</div>
+               
                 <button onClick={() => { this.getBoardReady(); }}>Start New Game</button>
                 <table><tbody>{this.tablerows(this.state.board)}</tbody></table>
             </div>
